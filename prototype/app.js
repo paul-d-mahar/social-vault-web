@@ -10,11 +10,12 @@ const httpsOptions = {
 };
 
 const httpsServer = https.createServer(httpsOptions, (req, res) => {
+    console.log(res);
     // --- Handling HTTP requests ---
     // always return index.html for the root 
     // Serve index.html
     res.writeHead(200, { 'Content-Type': 'text/html' });
-    fs.readFile('./index.html', (err, data) => {
+    fs.readFile('index.html', (err, data) => {
         if (err) {
             console.error(err);
             res.writeHead(500);
@@ -26,8 +27,8 @@ const httpsServer = https.createServer(httpsOptions, (req, res) => {
 });
 
 // --- Start the HTTPS server ---
-httpsServer.listen(443, () => {
-    console.log('HTTPS server listening on port 443');
+httpsServer.listen(53935, () => {
+    console.log('HTTPS server listening on port 53935');
 });
 
 // --- Optional:  Redirect HTTP requests to HTTPS ---
@@ -40,6 +41,6 @@ const httpServer = http.createServer((req, res) => {
     res.end();
 });
 
-httpServer.listen(80, () => {
-    console.log('HTTP server listening on port 80.  Redirecting to HTTPS.');
-});
+//httpServer.listen(80, () => {
+//    console.log('HTTP server listening on port 80.  Redirecting to HTTPS.');
+//});

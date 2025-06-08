@@ -5,8 +5,8 @@
       "type": "node",
       "request": "launch",
       "name": "Run server",
-      "program": "${workspaceFolder}/app.js",
-      "cwd": "${workspaceFolder}"
+      "program": "${workspaceFolder}/prototype/app.js",
+      "cwd": "${workspaceFolder}/prototype"
     }
   ]
 }
