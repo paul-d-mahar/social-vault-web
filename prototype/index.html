@@ -1,0 +1,135 @@
+<html>
+<head>
+    <title>Facebook & LinkedIn Page Post Permission</title>
+    <script src="https://connect.facebook.net/en_US/sdk.js"></script>
+</head>
+<body>
+    <h2>Login with Facebook to Manage Page Posts</h2>
+    <button onclick="loginWithFacebook()">Login with Facebook</button>
+
+    <h2>Login with LinkedIn to Get Access Token</h2>
+    <button onclick="loginWithLinkedIn()">Login with LinkedIn</button>
+
+    <script>
+        const immersiveClientId = 'bb28f8a9-a43e-433b-b966-657ba998921e'; // getImmersiveClientId(); // passed in from URL.
+        const linkedInCode = getLinkedInCode();
+        const facebookAppId = '640967435068629';
+        const linkedInClientId = '86d3s5866lb98l';
+        const immersiveiApiHost =  'https://localhost:51179/'
+        // const immersiveiApiHost =  'http://immersivei-test.azurewebsites.net/';
+        const expiration = new Date((new Date).setDate((new Date()).getDate() + 60)).toISOString().substr(0, 10);
+
+        // Facebook SDK
+        window.fbAsyncInit = function () {
+            FB.init({
+                appId: facebookAppId, // Replace with your Facebook App ID
+                cookie: true,
+                xfbml: true,
+                version: 'v19.0'
+            });
+        };
+
+        function loginWithFacebook() {
+            FB.login(function (response) {
+                if (response.authResponse) {
+                    const facebookToken = response.authResponse.accessToken;
+                    alert('Facebook Access Token: ' + facebookToken);
+                    saveFacebookToken(clientId, facebookToken);
+                } else {
+                    alert('User cancelled login or did not fully authorize.');
+                }
+            }, { scope: 'pages_manage_posts' });
+        }
+
+        // LinkedIn OAuth 2.0
+        function loginWithLinkedIn() {
+            const redirectUri = encodeURIComponent(window.location.origin + '/'); // Adjust as needed
+            const state = Math.random().toString(36).substring(2); // Simple random state
+            const scope = encodeURIComponent('email w_member_social'); // Adjust scopes as needed
+
+            alert(redirectUri);
+            const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${linkedInClientId}&redirect_uri=${redirectUri}&state=${state}&scope=${scope}`;
+            window.location.href = authUrl;
+        }
+
+        function checkIfImmersiveClientKnown(clientId) {
+            fetch(`${immersiveiApiHost}client/existence/${clientId}`)
+                .then(data => {
+                    console.log('all good; client known');
+                })
+                .catch(error => {
+                    alert('oops, client not known');
+                });
+        }
+
+        function saveFacebookToken(clientId, facebookToken) {
+            const data = {
+                "clientId": clientId,
+                "token": facebookToken
+            };
+            fetch(`${immersiveiApiHost}facebook/token`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(data => {
+                    console.log("successfully enabled facebook")
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+
+
+        }
+
+        function saveLinkedInToken(clientId, linkedInToken) {
+            const data = {
+                "clientId": clientId,
+                "token": linkedInToken
+            };
+            fetch(`${immersiveiApiHost}linkedin/token`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(data => {
+                    console.log("succesfully enabled linkedin")
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        function getLinkedInCode() {
+            const queryString = window.location.search;
+            const urlParams = new URLSearchParams(queryString);
+            const code = urlParams.get('code');
+            return code;
+        }
+
+        function getImmersiveClientId() {
+            const queryString = window.location.search;
+            const urlParams = new URLSearchParams(queryString);
+            const clientId = urlParams.get('client');
+            return code;
+        }
+
+        if (linkedInCode) {
+            saveLinkedInToken(immersiveClientId, linkedInCode);
+        }
+        else if (immersiveClientId) {
+            checkIfImmersiveClientKnown(immersiveClientId);
+        }
+        else {
+            alert('oops, invalid operation')
+        }
+
+    </script>
+</body>
+</html>
