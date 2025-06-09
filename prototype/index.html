@@ -43,11 +43,11 @@
 
         // LinkedIn OAuth 2.0
         function loginWithLinkedIn() {
-            const redirectUri = encodeURIComponent(window.location.origin + '/'); // Adjust as needed
+            const rawRedirect = window.location.origin + '/';
+            const redirectUri = encodeURIComponent(rawRedirect); // Adjust as needed
             const state = Math.random().toString(36).substring(2); // Simple random state
             const scope = encodeURIComponent('email w_member_social'); // Adjust scopes as needed
 
-            alert(redirectUri);
             const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${linkedInClientId}&redirect_uri=${redirectUri}&state=${state}&scope=${scope}`;
             window.location.href = authUrl;
         }
@@ -85,10 +85,10 @@
 
         }
 
-        function saveLinkedInToken(clientId, linkedInToken) {
+        function saveLinkedInToken(clientId, linkedInCode) {
             const data = {
                 "clientId": clientId,
-                "token": linkedInToken
+                "code": linkedInCode
             };
             fetch(`${immersiveiApiHost}linkedin/token`,
                 {
@@ -97,8 +97,11 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify(data)
-                })
-                .then(data => {
+                })               
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
                     console.log("succesfully enabled linkedin")
                 })
                 .catch(error => {
