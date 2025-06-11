@@ -46,7 +46,7 @@
             const rawRedirect = window.location.origin + '/';
             const redirectUri = encodeURIComponent(rawRedirect); // Adjust as needed
             const state = Math.random().toString(36).substring(2); // Simple random state
-            const scope = encodeURIComponent('email w_member_social'); // Adjust scopes as needed
+            const scope = encodeURIComponent('openid profile w_member_social email'); // Adjust scopes as needed
 
             const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${linkedInClientId}&redirect_uri=${redirectUri}&state=${state}&scope=${scope}`;
             window.location.href = authUrl;
@@ -54,7 +54,10 @@
 
         function checkIfImmersiveClientKnown(clientId) {
             fetch(`${immersiveiApiHost}client/existence/${clientId}`)
-                .then(data => {
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
                     console.log('all good; client known');
                 })
                 .catch(error => {
@@ -75,7 +78,10 @@
                     },
                     body: JSON.stringify(data)
                 })
-                .then(data => {
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
                     console.log("successfully enabled facebook")
                 })
                 .catch(error => {
