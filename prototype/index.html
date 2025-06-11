@@ -13,7 +13,8 @@
     <script>
         const immersiveClientId = 'bb28f8a9-a43e-433b-b966-657ba998921e'; // getImmersiveClientId(); // passed in from URL.
         const linkedInCode = getLinkedInCode();
-        const facebookAppId = '1049585230461995';
+        // const facebookAppId = '1049585230461995';
+        const facebookAppId = '1259638752405192';
         const linkedInClientId = '86d3s5866lb98l';
         // const immersiveiApiHost =  'https://localhost:51179/'
         const immersiveiApiHost =  'https://immersivei-test.azurewebsites.net/';
@@ -21,7 +22,7 @@
 
         // Facebook SDK
         window.fbAsyncInit = function () {
-            FB.init({
+             FB.init({
                 appId: facebookAppId, // Replace with your Facebook App ID
                 cookie: true,
                 xfbml: true,
@@ -33,8 +34,7 @@
             FB.login(function (response) {
                 if (response.authResponse) {
                     const facebookToken = response.authResponse.accessToken;
-                    alert('Facebook Access Token: ' + facebookToken);
-                    saveFacebookToken(clientId, facebookToken);
+                    saveFacebookToken(immersiveClientId, facebookToken);
                 } else {
                     alert('User cancelled login or did not fully authorize.');
                 }
