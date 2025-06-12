@@ -29,10 +29,9 @@
         };
 
         function loginWithFacebook() {
-            FB.login(function (response) {
-                if (response.authResponse) {
-                    const facebookToken = response.authResponse.accessToken;
-                    saveFacebookToken(immersiveClientId, facebookToken);
+            FB.login(function (loginResponse) {
+                if (loginResponse.authResponse) {
+                    saveFacebookToken(immersiveClientId, loginResponse);
                 } else {
                     alert('User cancelled login or did not fully authorize.');
                 }
@@ -63,10 +62,10 @@
                 });
         }
 
-        function saveFacebookToken(clientId, facebookToken) {
+        function saveFacebookToken(clientId, loginResponse) {
             const data = {
-                "clientId": clientId,
-                "token": facebookToken
+                "ClientId": clientId,
+                "LoginResponse": loginResponse
             };
             fetch(`${immersiveiApiHost}facebook/token`,
                 {
