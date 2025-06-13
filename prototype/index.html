@@ -4,19 +4,36 @@
     <script src="https://connect.facebook.net/en_US/sdk.js"></script>
 </head>
 <body>
+    <h1>Immersive Social Network Access</h1>
+
+    <p>
+        Test access for: 
+        <select id="account" onchange="switchAccount()">
+            <option value="">(select account)</option>
+            <option value="bb28f8a9-a43e-433b-b966-657ba998921e">paul@immersivei.com'</option>
+            <option value="6a3aedc4-46d1-4c88-af20-55b437193941">trey@immersivei.com</option>
+        </select>
+    </p>
+
     <h2>Login with Facebook to Manage Page Posts</h2>
     <button onclick="loginWithFacebook()">Login with Facebook</button>
 
     <h2>Login with LinkedIn to Get Access Token</h2>
     <button onclick="loginWithLinkedIn()">Login with LinkedIn</button>
 
+    <p id="message">
+
+    </p>
+
+
     <script>
-        const immersiveClientId = 'bb28f8a9-a43e-433b-b966-657ba998921e'; // getImmersiveClientId(); // passed in from URL.
+        const immersiveClientId = getImmersiveClientId(); 
         const linkedInCode = getLinkedInCode();
         const facebookAppId = '1259638752405192';
         const linkedInClientId = '86d3s5866lb98l';
         // const immersiveiApiHost =  'https://localhost:51179/'
         const immersiveiApiHost =  'https://immersivei-test.azurewebsites.net/';
+
 
         // Facebook SDK
         window.fbAsyncInit = function () {
@@ -28,13 +45,24 @@
             });
         };
 
+        function showMessage(message) {
+            console.log(message)
+            document.getElementById('message').textContent = message;
+        }
+
+        function switchAccount() {
+            const option = document.getElementById("account");
+            const client = option.value;
+            window.location = window.location.search = `?client=${client}`;
+        }
+
         function loginWithFacebook() {
             FB.login(function (loginResponse) {
                 if (loginResponse.authResponse) {
                     saveFacebookToken(immersiveClientId, loginResponse);
-                } else {
-                    alert('User cancelled login or did not fully authorize.');
+                    return;
                 }
+                showMessage('User cancelled login or did not fully authorize.');
             }, { scope: 'pages_manage_posts' });
         }
 
@@ -52,13 +80,17 @@
         function checkIfImmersiveClientKnown(clientId) {
             fetch(`${immersiveiApiHost}client/existence/${clientId}`)
                 .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-                    console.log('all good; client known');
+                    if (response.ok) {
+                        showMessage('Immersive account verified');
+
+                        const accountSelect = document.getElementById("account");
+                        accountSelect.value = clientId;
+                        return;
+                    }                    
+                    showMessage(`HTTP error! Status: ${response.status}`);
                 })
                 .catch(error => {
-                    alert('oops, client not known');
+                    showMessage('oops, client not known');
                 });
         }
 
@@ -76,13 +108,14 @@
                     body: JSON.stringify(data)
                 })
                 .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    if (response.ok) {
+                        showMessage("successfully enabled facebook");
+                        return;
                     }
-                    console.log("successfully enabled facebook")
+                    showMessage(`HTTP error! Status: ${response.status}`);
                 })
                 .catch(error => {
-                    console.error('Error:', error);
+                    showMessage('Error:', error);
                 });
 
 
@@ -102,10 +135,11 @@
                     body: JSON.stringify(data)
                 })               
                 .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    if (response.ok) {
+                        showMessage("succesfully enabled linkedin");
+                        return;
                     }
-                    console.log("succesfully enabled linkedin")
+                    showMessage(`HTTP error! Status: ${response.status}`);
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -123,7 +157,7 @@
             const queryString = window.location.search;
             const urlParams = new URLSearchParams(queryString);
             const clientId = urlParams.get('client');
-            return code;
+            return clientId;
         }
 
         if (linkedInCode) {
@@ -131,9 +165,10 @@
         }
         else if (immersiveClientId) {
             checkIfImmersiveClientKnown(immersiveClientId);
+
         }
         else {
-            alert('oops, invalid operation')
+            showMessage('Please select an account.')
         }
 
     </script>
