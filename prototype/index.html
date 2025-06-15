@@ -7,10 +7,10 @@
     <h1>Immersive Social Network Access</h1>
 
     <p>
-        Test access for: 
+        Test access for:
         <select id="account" onchange="switchAccount()">
             <option value="">(select account)</option>
-            <option value="bb28f8a9-a43e-433b-b966-657ba998921e">paul@immersivei.com'</option>
+            <option value="bb28f8a9-a43e-433b-b966-657ba998921e">paul@immersivei.com</option>
             <option value="6a3aedc4-46d1-4c88-af20-55b437193941">trey@immersivei.com</option>
         </select>
     </p>
@@ -21,23 +21,29 @@
     <h2>Login with LinkedIn to Get Access Token</h2>
     <button onclick="loginWithLinkedIn()">Login with LinkedIn</button>
 
+    <h2>Login with Instagram to Get Access Token</h2>
+    <button onclick="loginWithInstagram()">Login with Instagram</button>
+
+
     <p id="message">
 
     </p>
 
 
     <script>
-        const immersiveClientId = getImmersiveClientId(); 
+        const immersiveClientId = getImmersiveClientId();
         const linkedInCode = getLinkedInCode();
+        const instagramCode = getInstagramCode();
         const facebookAppId = '1259638752405192';
         const linkedInClientId = '86d3s5866lb98l';
-        // const immersiveiApiHost =  'https://localhost:51179/'
-        const immersiveiApiHost =  'https://immersivei-test.azurewebsites.net/';
+        const instagramAppId = '4057957007807886';
+       // const immersiveiApiHost =  'https://localhost:51179/'
+        const immersiveiApiHost = 'https://immersivei-test.azurewebsites.net/';
 
 
         // Facebook SDK
         window.fbAsyncInit = function () {
-             FB.init({
+            FB.init({
                 appId: facebookAppId, // Replace with your Facebook App ID
                 cookie: true,
                 xfbml: true,
@@ -56,6 +62,24 @@
             window.location = window.location.search = `?client=${client}`;
         }
 
+        function loginWithInstagram() {
+            const redirectUri = encodeURIComponent(window.location.origin + '/');
+            const scope = 'user_profile,user_media,instagram_content_publish';
+            const state = 'instagram_' + Math.random().toString(36).substring(2); // Unique state
+
+            sessionStorage.setItem('oauth_state_instagram', state);
+            sessionStorage.setItem('immersive_client_id', immersiveClientId);
+            const authUrl = `https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1` +
+                `&client_id=${instagramAppId}` +
+                `&redirect_uri=${redirectUri}` +
+                `&response_type=code` +
+                `&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights` +
+                `&state=${state}`;
+   
+            window.location.href = authUrl;
+
+        }
+
         function loginWithFacebook() {
             FB.login(function (loginResponse) {
                 if (loginResponse.authResponse) {
@@ -69,34 +93,37 @@
         // LinkedIn OAuth 2.0
         function loginWithLinkedIn() {
             const rawRedirect = window.location.origin + '/';
-            const redirectUri = encodeURIComponent(rawRedirect); // Adjust as needed
-            const state = Math.random().toString(36).substring(2); // Simple random state
-            const scope = encodeURIComponent('openid profile w_member_social email'); // Adjust scopes as needed
+            const redirectUri = encodeURIComponent(rawRedirect);
+            const state = 'linkedin_' + Math.random().toString(36).substring(2); // Unique state
+            const scope = encodeURIComponent('openid profile w_member_social email');
+
+            sessionStorage.setItem('oauth_state_linkedin', state);
 
             const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${linkedInClientId}&redirect_uri=${redirectUri}&state=${state}&scope=${scope}`;
             window.location.href = authUrl;
         }
 
-        function checkIfImmersiveClientKnown(clientId) {
-            fetch(`${immersiveiApiHost}client/existence/${clientId}`)
+        function checkIfImmersiveClientKnown(immersiveClientId) {
+            fetch(`${immersiveiApiHost}client/existence/${immersiveClientId}`)
                 .then(response => {
                     if (response.ok) {
                         showMessage('Immersive account verified');
 
                         const accountSelect = document.getElementById("account");
-                        accountSelect.value = clientId;
+                        accountSelect.value = immersiveClientId;
                         return;
-                    }                    
+                    }
                     showMessage(`HTTP error! Status: ${response.status}`);
                 })
                 .catch(error => {
+                    console.error(error);
                     showMessage('oops, client not known');
                 });
         }
 
-        function saveFacebookToken(clientId, loginResponse) {
+        function saveFacebookToken(immersiveClientId, loginResponse) {
             const data = {
-                "ClientId": clientId,
+                "ClientId": immersiveClientId,
                 "LoginResponse": loginResponse
             };
             fetch(`${immersiveiApiHost}facebook/token`,
@@ -121,6 +148,36 @@
 
         }
 
+        function saveInstagramCode(instagramCode) {
+            const id = sessionStorage.getItem('immersive_client_id');
+            if (!id) {
+                showMessage('Invalid session state');
+                return;
+            }
+            const data = {
+                "clientId": id,
+                "code": instagramCode
+            };
+            fetch(`${immersiveiApiHost}instagram/token`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => {
+                    if (response.ok) {
+                        showMessage("succesfully enabled instagram");
+                        return;
+                    }
+                    showMessage(`HTTP error! Status: ${response.status}`);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
         function saveLinkedInToken(clientId, linkedInCode) {
             const data = {
                 "clientId": clientId,
@@ -133,7 +190,7 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify(data)
-                })               
+                })
                 .then(response => {
                     if (response.ok) {
                         showMessage("succesfully enabled linkedin");
@@ -146,11 +203,27 @@
                 });
         }
 
-        function getLinkedInCode() {
-            const queryString = window.location.search;
-            const urlParams = new URLSearchParams(queryString);
+        function getInstagramCode() {
+            const urlParams = new URLSearchParams(window.location.search);
             const code = urlParams.get('code');
-            return code;
+            const referred = window.document.referrer && window.document.referrer.includes("instagram")
+            const sessionState = sessionStorage.getItem('oauth_state_instagram');
+            if (code && referred && sessionState && sessionState.startsWith('instagram_')) {
+                return code;
+            }
+            return null;
+        }
+
+
+        function getLinkedInCode() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+            const expectedState = sessionStorage.getItem('oauth_state_linkedin');
+            if (code && state && state === expectedState && state.startsWith('linkedin_')) {
+                return code;
+            }
+            return null;
         }
 
         function getImmersiveClientId() {
@@ -162,6 +235,9 @@
 
         if (linkedInCode) {
             saveLinkedInToken(immersiveClientId, linkedInCode);
+        }
+        else if (instagramCode) {
+            saveInstagramCode(instagramCode)
         }
         else if (immersiveClientId) {
             checkIfImmersiveClientKnown(immersiveClientId);
